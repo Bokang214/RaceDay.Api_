@@ -8,8 +8,10 @@ Roles
 •	Organiser – creates, updates and deletes their own events and categories, views enrolments for their events, and captures or corrects results.
 •	Participant – browses events, enrols in an event by choosing a category, withdraws, and views their own results.
 Both roles can register, log in and manage their own profile. Using the other role's functions returns 403 Forbidden; no session returns 401 Unauthorized.
+
 Authentication
 Passwords are hashed with PBKDF2. On login the server creates a session storing the user ID, role and email; the client only holds an HttpOnly session cookie. A custom authentication handler enforces [Authorize] and role checks from the session on every request.
+
 Main endpoints
 •	Auth: /api/auth/register, /api/auth/login, /api/auth/logout
 •	Profile: /api/users/me
