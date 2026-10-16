@@ -1,0 +1,54 @@
+name: RaceDay API CI
+
+# Runs on every push (any branch), every pull request, and can be started by hand.
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Locate projects
+        id: find
+        run: |
+          API_PROJ=$(find . -name "RaceDay.Api.csproj" -not -path "*/obj/*" | head -n 1)
+          TEST_PROJ=$(find . -name "RaceDay.Api.Tests.csproj" -not -path "*/obj/*" | head -n 1)
+          echo "API project:  $API_PROJ"
+          echo "Test project: $TEST_PROJ"
+          test -n "$API_PROJ"
+          test -n "$TEST_PROJ"
+          echo "api=$API_PROJ" >> "$GITHUB_OUTPUT"
+          echo "tests=$TEST_PROJ" >> "$GITHUB_OUTPUT"
+
+      - name: Restore dependencies
+        run: |
+          dotnet restore "${{ steps.find.outputs.api }}"
+          dotnet restore "${{ steps.find.outputs.tests }}"
+
+      - name: Build API
+        run: dotnet build "${{ steps.find.outputs.api }}" --no-restore --configuration Release
+
+      - name: Run unit tests
+        run: >
+          dotnet test "${{ steps.find.outputs.tests }}"
+          --configuration Release
+          --verbosity normal
+          --logger "trx;LogFileName=test-results.trx"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path:
